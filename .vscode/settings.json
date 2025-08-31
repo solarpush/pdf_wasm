@@ -1,6 +1,6 @@
 {
   "yaml.schemas": {
-    "./schema/pdf-template-schema.json": ["*.pdftpl", "**/templates/*.yaml", "**/templates/*.yml"]
+    "./schema/pdf-template-schema.json": ["*.pdftpl"]
   },
   "files.associations": {
     "*.pdftpl": "yaml"
