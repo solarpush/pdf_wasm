@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/jung-kurt/gofpdf"
-	"gopkg.in/yaml.v3"
 )
 
 // --- Structures du template JSON ---
@@ -1083,110 +1081,4 @@ func GeneratePDFFromContent(templateContent []byte, variables map[string]interfa
 func GeneratePDF(template Template) ([]byte, error) {
 	builder := NewPDFBuilder(template)
 	return builder.Build()
-}
-
-// --- Support YAML ---
-
-// LoadTemplateFromYAMLFile charge un template YAML et le convertit en structure Template
-func LoadTemplateFromYAMLFile(yamlPath string, variables map[string]interface{}) (Template, error) {
-	// Lire le fichier YAML
-	yamlContent, err := os.ReadFile(yamlPath)
-	if err != nil {
-		return Template{}, fmt.Errorf("failed to read YAML file: %w", err)
-	}
-
-	return LoadTemplateFromYAMLContent(yamlContent, variables)
-}
-
-// LoadTemplateFromYAMLContent charge un template depuis du contenu YAML
-func LoadTemplateFromYAMLContent(yamlContent []byte, variables map[string]interface{}) (Template, error) {
-	// 1. Traiter les variables dans le YAML
-	processor := NewTemplateProcessor(variables)
-	processedYAML, err := processor.ProcessTemplate(yamlContent)
-	if err != nil {
-		return Template{}, fmt.Errorf("failed to process YAML variables: %w", err)
-	}
-
-	// 2. Parser le YAML en structure Go
-	var template Template
-	if err := yaml.Unmarshal(processedYAML, &template); err != nil {
-		return Template{}, fmt.Errorf("failed to parse YAML: %w", err)
-	}
-
-	return template, nil
-}
-
-// GeneratePDFFromYAMLFile génère un PDF depuis un fichier YAML
-func GeneratePDFFromYAMLFile(yamlPath string, variables map[string]interface{}) ([]byte, error) {
-	template, err := LoadTemplateFromYAMLFile(yamlPath, variables)
-	if err != nil {
-		return nil, err
-	}
-
-	return GeneratePDF(template)
-}
-
-// GeneratePDFFromYAMLContent génère un PDF depuis du contenu YAML
-func GeneratePDFFromYAMLContent(yamlContent []byte, variables map[string]interface{}) ([]byte, error) {
-	template, err := LoadTemplateFromYAMLContent(yamlContent, variables)
-	if err != nil {
-		return nil, err
-	}
-
-	return GeneratePDF(template)
-}
-
-// ConvertJSONToYAML convertit un template JSON en YAML
-func ConvertJSONToYAML(jsonContent []byte) ([]byte, error) {
-	var data interface{}
-	if err := json.Unmarshal(jsonContent, &data); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
-	}
-
-	yamlContent, err := yaml.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal YAML: %w", err)
-	}
-
-	return yamlContent, nil
-}
-
-// ConvertYAMLToJSON convertit un template YAML en JSON
-func ConvertYAMLToJSON(yamlContent []byte) ([]byte, error) {
-	var data interface{}
-	if err := yaml.Unmarshal(yamlContent, &data); err != nil {
-		return nil, fmt.Errorf("failed to parse YAML: %w", err)
-	}
-
-	jsonContent, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal JSON: %w", err)
-	}
-
-	return jsonContent, nil
-}
-
-// DetectTemplateFormat détecte si un fichier est JSON ou YAML
-func DetectTemplateFormat(filePath string) string {
-	ext := strings.ToLower(filepath.Ext(filePath))
-	switch ext {
-	case ".yaml", ".yml", ".pdftpl":
-		return "yaml"
-	case ".json":
-		return "json"
-	default:
-		// Essayer de détecter par le contenu
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			return "unknown"
-		}
-
-		// Test rapide : si ça commence par { c'est probablement JSON
-		trimmed := strings.TrimSpace(string(content))
-		if strings.HasPrefix(trimmed, "{") {
-			return "json"
-		}
-
-		return "yaml"
-	}
 }

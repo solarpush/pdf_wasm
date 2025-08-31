@@ -29,7 +29,7 @@ $(WASM_NAME): $(GO_FILES)
 
 # Test targets
 .PHONY: test
-test: build test-basic test-combined test-dynamic test-yaml
+test: build test-basic test-combined test-dynamic
 	@echo "✅ All tests passed successfully!"
 
 .PHONY: test-basic
@@ -53,11 +53,11 @@ test-dynamic:
 	@cd cmd/test_dynamic_loops && go run main.go > /dev/null 2>&1
 	@echo "   ✅ Dynamic loops tests passed"
 
-.PHONY: test-yaml
-test-yaml:
-	@echo "🎯 Testing YAML support..."
-	@cd cmd/test_yaml && go run main.go
-	@echo "   ✅ YAML support tests passed"
+# Performance tests
+.PHONY: bench-report
+bench-report: $(BINARY_NAME)
+	@echo "📊 Generating PDF benchmark report..."
+	@./generate_benchmark_report.sh
 
 # Examples
 .PHONY: examples
@@ -117,6 +117,9 @@ help:
 	@echo "   make test-basic         - Test basic templates"
 	@echo "   make test-dynamic       - Test dynamic loops with {{#array}}"
 	@echo "   make examples           - Generate examples"
+	@echo ""
+	@echo "Performance Commands:"
+	@echo "   make bench-report       - Generate PDF benchmark report (1000+500 PDFs)"
 	@echo ""
 	@echo "Development:"
 	@echo "   make validate           - Validate JSON templates"

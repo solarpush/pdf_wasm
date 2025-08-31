@@ -1,0 +1,309 @@
+{
+    "pdf_template": {
+        "page": {
+            "format": "A4"
+        },
+        "fonts": {
+            "default": "DejaVu"
+        },
+        "elements": [
+            {
+                "type": "text",
+                "content": "Rapport de Performance PDF",
+                "style": {
+                    "size": 20,
+                    "bold": true,
+                    "align": "center",
+                    "color": "#2E86AB",
+                    "margin": [
+                        0,
+                        0,
+                        20,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Genere le {{date}} a {{time}}",
+                "style": {
+                    "size": 12,
+                    "align": "center",
+                    "color": "#666666",
+                    "margin": [
+                        0,
+                        0,
+                        30,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 20
+                }
+            },
+            {
+                "type": "text",
+                "content": "Resultats des Tests de Performance",
+                "style": {
+                    "size": 16,
+                    "bold": true,
+                    "color": "#333333",
+                    "margin": [
+                        0,
+                        0,
+                        15,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "table",
+                "columns": [
+                    {
+                        "header": "Type de Test",
+                        "width": 60,
+                        "align": "left"
+                    },
+                    {
+                        "header": "Nombre",
+                        "width": 25,
+                        "align": "center"
+                    },
+                    {
+                        "header": "Temps",
+                        "width": 25,
+                        "align": "center"
+                    },
+                    {
+                        "header": "PDFs/sec",
+                        "width": 25,
+                        "align": "center"
+                    },
+                    {
+                        "header": "CPU (%)",
+                        "width": 25,
+                        "align": "center"
+                    },
+                    {
+                        "header": "CPU Total (%)",
+                        "width": 30,
+                        "align": "center"
+                    }
+                ],
+                "rows": [
+                    {
+                        "cells": [
+                            "{{simple_type}}",
+                            "{{simple_count}}",
+                            "{{simple_time}}",
+                            "{{simple_speed}}",
+                            "{{simple_cpu}}",
+                            "{{simple_cpu_percent}}%"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "{{complex_type}}",
+                            "{{complex_count}}",
+                            "{{complex_time}}",
+                            "{{complex_speed}}",
+                            "{{complex_cpu}}",
+                            "{{complex_cpu_percent}}%"
+                        ]
+                    }
+                ],
+                "style": {
+                    "size": 10,
+                    "border": "1"
+                }
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 20
+                }
+            },
+            {
+                "type": "text",
+                "content": "Informations Systeme",
+                "style": {
+                    "size": 16,
+                    "bold": true,
+                    "color": "#333333",
+                    "margin": [
+                        0,
+                        0,
+                        15,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "table",
+                "columns": [
+                    {
+                        "header": "Metrique",
+                        "width": 100,
+                        "align": "left"
+                    },
+                    {
+                        "header": "Valeur",
+                        "width": 80,
+                        "align": "left"
+                    }
+                ],
+                "rows": [
+                    {
+                        "cells": [
+                            "Memoire maximale",
+                            "{{max_memory}} KB"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Taille PDF moyenne",
+                            "{{avg_size}} KB"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Systeme",
+                            "{{system_info}}"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Nombre de coeurs CPU",
+                            "{{cpu_cores}}"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Version Go",
+                            "{{go_version}}"
+                        ]
+                    }
+                ],
+                "style": {
+                    "size": 10,
+                    "border": "1"
+                }
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 20
+                }
+            },
+            {
+                "type": "text",
+                "content": "Performance Summary",
+                "style": {
+                    "size": 16,
+                    "bold": true,
+                    "color": "#333333",
+                    "margin": [
+                        0,
+                        0,
+                        15,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Performance moyenne: {{avg_speed}} PDFs/seconde",
+                "style": {
+                    "size": 11,
+                    "color": "#444444",
+                    "margin": [
+                        20,
+                        0,
+                        5,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Temps de generation optimal: {{best_time}}",
+                "style": {
+                    "size": 11,
+                    "color": "#444444",
+                    "margin": [
+                        20,
+                        0,
+                        5,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Utilisation CPU: {{avg_cpu}}% ({{avg_cpu_percent}}% du total des coeurs)",
+                "style": {
+                    "size": 11,
+                    "color": "#444444",
+                    "margin": [
+                        20,
+                        0,
+                        5,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Efficacite: {{efficiency}} (Excellent > 40 PDFs/sec)",
+                "style": {
+                    "size": 11,
+                    "color": "#444444",
+                    "margin": [
+                        20,
+                        0,
+                        20,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 30
+                }
+            },
+            {
+                "type": "text",
+                "content": "Genere par le systeme PDF Template Performance Benchmark",
+                "style": {
+                    "size": 8,
+                    "align": "center",
+                    "color": "#888888"
+                }
+            }
+        ]
+    },
+    "pdfVars": {
+        "date": "31/08/2025",
+        "time": "14:50:00",
+        "simple_type": "Template Simple",
+        "simple_time": "2.05s",
+        "simple_speed": "48.8",
+        "simple_cpu": "119",
+        "complex_type": "Template Complexe",
+        "complex_time": "1.16s",
+        "complex_speed": "43.1",
+        "complex_cpu": "123",
+        "max_memory": "16MB",
+        "avg_size": "32",
+        "system_info": "Linux",
+        "go_version": "go1.21",
+        "avg_speed": "45.9",
+        "best_time": "1.16s (complexe)",
+        "avg_cpu": "121",
+        "efficiency": "Excellente"
+    }
+}
