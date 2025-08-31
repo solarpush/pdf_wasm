@@ -1,0 +1,104 @@
+{
+    "pdf_template": {
+        "page": {
+            "format": "A4",
+            "orientation": "portrait",
+            "margins": [
+                20,
+                15,
+                20,
+                25
+            ]
+        },
+        "fonts": {
+            "default": "DejaVu"
+        },
+        "elements": [
+            {
+                "type": "text",
+                "content": "FACTURE N° {{invoice.number}}",
+                "style": {
+                    "size": 20,
+                    "bold": true,
+                    "color": "{{theme.primary}}",
+                    "align": "center",
+                    "margin": [
+                        0,
+                        0,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "table",
+                "columns": [
+                    {
+                        "header": "Description",
+                        "width": 100,
+                        "align": "left"
+                    },
+                    {
+                        "header": "Prix",
+                        "width": 40,
+                        "align": "right"
+                    }
+                ],
+                "rows": [
+                    "{{#items}}",
+                    {
+                        "cells": [
+                            "{{description}}",
+                            "{{price}} {{currency}}"
+                        ]
+                    },
+                    "{{/items}}"
+                ],
+                "style": {
+                    "size": 10,
+                    "color": "#FFFFFF",
+                    "bgColor": "{{theme.primary}}",
+                    "bold": true,
+                    "fill": true,
+                    "border": "1"
+                }
+            },
+            {
+                "type": "text",
+                "content": "Total: {{total}} {{currency}}",
+                "style": {
+                    "size": 14,
+                    "bold": true,
+                    "align": "right",
+                    "color": "{{theme.accent}}"
+                }
+            }
+        ]
+    },
+    "pdfVars": {
+        "invoice": {
+            "number": "FAC-2025-LOOP",
+            "date": "31/08/2025"
+        },
+        "items": [
+            {
+                "description": "Service de développement",
+                "price": "1200.00"
+            },
+            {
+                "description": "Formation",
+                "price": "800.00"
+            },
+            {
+                "description": "Support technique",
+                "price": "400.00"
+            }
+        ],
+        "currency": "€",
+        "total": "2400.00",
+        "theme": {
+            "primary": "#2563EB",
+            "accent": "#059669"
+        }
+    }
+}

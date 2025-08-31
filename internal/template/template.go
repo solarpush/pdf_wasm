@@ -54,7 +54,7 @@ type Element struct {
 
 	// Spécifique aux tableaux
 	Columns []TableColumn `json:"columns,omitempty"`
-	Rows    []TableRow    `json:"rows,omitempty"`
+	Rows    interface{}   `json:"rows,omitempty"` // Peut être []TableRow ou string (pour templates avec boucles)
 
 	// Spécifique aux grilles
 	GridColumns int `json:"gridColumns,omitempty"`
@@ -305,7 +305,40 @@ func (b *PDFBuilder) renderText(element Element) {
 }
 
 func (b *PDFBuilder) renderTable(element Element) {
-	if len(element.Columns) == 0 || len(element.Rows) == 0 {
+	if len(element.Columns) == 0 {
+		return
+	}
+
+	// Gérer les différents types de Rows
+	var rows []TableRow
+	switch r := element.Rows.(type) {
+	case []TableRow:
+		rows = r
+	case []interface{}:
+		// Conversion depuis l'interface générique (venant du JSON)
+		for _, item := range r {
+			if rowMap, ok := item.(map[string]interface{}); ok {
+				row := TableRow{}
+				if cells, exists := rowMap["cells"]; exists {
+					if cellsSlice, ok := cells.([]interface{}); ok {
+						for _, cell := range cellsSlice {
+							if cellStr, ok := cell.(string); ok {
+								row.Cells = append(row.Cells, cellStr)
+							}
+						}
+					}
+				}
+				rows = append(rows, row)
+			}
+		}
+	case string:
+		// Template string avec boucles - ne rien faire ici car c'est géré par le template processor
+		return
+	default:
+		return
+	}
+
+	if len(rows) == 0 {
 		return
 	}
 
@@ -333,7 +366,7 @@ func (b *PDFBuilder) renderTable(element Element) {
 	b.pdf.Ln(-1)
 
 	// Lignes de données
-	for _, row := range element.Rows {
+	for _, row := range rows {
 		if row.Style != nil {
 			b.applyStyle(row.Style)
 		} else {

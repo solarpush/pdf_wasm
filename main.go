@@ -10,6 +10,14 @@ import (
 	"pdf_wasm/internal/template"
 )
 
+// Structure pour accepter template + variables
+type InputData struct {
+	PdfTemplate *template.Template     `json:"pdf_template,omitempty"`
+	PdfVars     map[string]interface{} `json:"pdfVars,omitempty"`
+	// Compatibilité avec l'ancien format (template direct)
+	template.Template
+}
+
 func main() {
 	// Lire JSON depuis stdin
 	in, err := os.ReadFile("/dev/stdin")
@@ -18,17 +26,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	var tmpl template.Template
-	if err := json.Unmarshal(in, &tmpl); err != nil {
+	var input InputData
+	if err := json.Unmarshal(in, &input); err != nil {
 		fmt.Fprintln(os.Stderr, "bad json:", err)
 		os.Exit(1)
 	}
 
-	// Générer le PDF depuis le template
-	pdfBytes, err := template.GeneratePDF(tmpl)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "pdf error:", err)
-		os.Exit(1)
+	var pdfBytes []byte
+
+	// Nouveau format avec template + variables
+	if input.PdfTemplate != nil {
+		// Convertir le template en JSON puis le traiter avec les variables
+		templateBytes, err := json.Marshal(input.PdfTemplate)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "template marshal error:", err)
+			os.Exit(1)
+		}
+
+		// Traiter le template avec les variables
+		pdfBytes, err = template.GeneratePDFFromContent(templateBytes, input.PdfVars)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "pdf generation error:", err)
+			os.Exit(1)
+		}
+	} else {
+		// Ancien format (template direct) - compatibilité ascendante
+		pdfBytes, err = template.GeneratePDF(input.Template)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "pdf error:", err)
+			os.Exit(1)
+		}
 	}
 
 	// Écrire le PDF binaire sur stdout

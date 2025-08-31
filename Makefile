@@ -29,7 +29,7 @@ $(WASM_NAME): $(GO_FILES)
 
 # Test targets
 .PHONY: test
-test: build test-basic test-dynamic test-yaml
+test: build test-basic test-combined test-dynamic test-yaml
 	@echo "✅ All tests passed successfully!"
 
 .PHONY: test-basic
@@ -38,6 +38,14 @@ test-basic: $(BINARY_NAME)
 	@mkdir -p output
 	@echo '{"page":{"format":"A4"},"elements":[{"type":"text","content":"Hello World","style":{"size":16,"align":"center"}}]}' | ./$(BINARY_NAME) > output/test_basic.pdf
 	@echo "   ✅ Basic template test passed"
+
+.PHONY: test-combined
+test-combined: $(BINARY_NAME)
+	@echo "🔀 Testing combined template + variables..."
+	@mkdir -p output
+	@cat test_simple.json | ./$(BINARY_NAME) > output/test_combined.pdf
+	@cat test_with_loops.json | ./$(BINARY_NAME) > output/test_loops.pdf
+	@echo "   ✅ Combined template + variables test passed"
 
 .PHONY: test-dynamic
 test-dynamic:
