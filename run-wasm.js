@@ -3,32 +3,82 @@
 // Module pour utiliser le WASM PDF Template dans une application Node.js
 
 const fs = require("fs");
+const path = require("path");
 const { WASI } = require("wasi");
 const { Readable, Writable } = require("stream");
 
+// Fonction utilitaire pour s'assurer qu'un dossier existe
+function ensureDirectoryExists(filePath) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+const WASM_PATH = "./pdf-template.wasm";
+const WASM_GZ_PATH = "./pdf-template.wasm.gz";
 class PDFWasmGenerator {
-  constructor() {
+  constructor(options = {}) {
     this.wasmInstance = null;
     this.wasmModule = null;
+    this.preferCompressed = options.preferCompressed ?? true; // Par défaut: compressé
   }
 
   // Initialiser le module WASM (à faire une seule fois)
   async initialize() {
     if (this.wasmInstance) return; // Déjà initialisé
 
-    if (!fs.existsSync("./pdf-template.wasm")) {
-      throw new Error(
-        "❌ Fichier pdf-template.wasm non trouvé. Exécutez: make build-wasm"
-      );
+    const startTime = performance.now();
+    let wasmBuffer;
+    let loadMethod;
+
+    // Choix selon la préférence utilisateur
+    const useCompressed = this.preferCompressed && fs.existsSync(WASM_GZ_PATH);
+
+    if (useCompressed) {
+      const loadStart = performance.now();
+      console.log("📦 Chargement de la version compressée (1.6MB)...");
+      const zlib = require("zlib");
+      const compressedBuffer = fs.readFileSync(WASM_GZ_PATH);
+      const loadTime = performance.now() - loadStart;
+
+      const decompressStart = performance.now();
+      wasmBuffer = zlib.gunzipSync(compressedBuffer);
+      const decompressTime = performance.now() - decompressStart;
+
+      loadMethod = `compressée (lecture: ${loadTime.toFixed(
+        1
+      )}ms, décompression: ${decompressTime.toFixed(1)}ms)`;
+    }
+    // Fallback vers version normale
+    else if (fs.existsSync(WASM_PATH)) {
+      const loadStart = performance.now();
+      console.log("📦 Chargement de la version standard (5.7MB)...");
+      wasmBuffer = fs.readFileSync(WASM_PATH);
+      const loadTime = performance.now() - loadStart;
+
+      loadMethod = `standard (lecture: ${loadTime.toFixed(1)}ms)`;
+    }
+    // Erreur: aucun fichier trouvé
+    else {
+      throw new Error("❌ Aucun fichier WASM trouvé. Exécutez: make build");
     }
 
-    // Charger le module WASM
-    const wasmBuffer = fs.readFileSync("./pdf-template.wasm");
+    const compileStart = performance.now();
     this.wasmModule = await WebAssembly.compile(wasmBuffer);
+    const compileTime = performance.now() - compileStart;
+
+    const totalTime = performance.now() - startTime;
+    console.log(
+      `⚡ Initialisation ${loadMethod}, compilation: ${compileTime.toFixed(
+        1
+      )}ms, total: ${totalTime.toFixed(1)}ms`
+    );
   }
 
   // Générer un PDF à partir d'un template et de variables
   async generatePDF(template, variables) {
+    const loadStart = performance.now();
     if (!this.wasmModule) {
       throw new Error(
         "Module WASM non initialisé. Appelez initialize() d'abord."
@@ -63,7 +113,7 @@ class PDFWasmGenerator {
 
         const wasi = new WASI({
           version: "preview1",
-          args: ["pdf-template"],
+          args: ["pdf-template"], // argv[0] = nom du programme
           env: process.env,
           stdin: inputFd,
           stdout: outputFd,
@@ -114,6 +164,8 @@ class PDFWasmGenerator {
       } catch (error) {
         reject(error);
       }
+      const loadTime = performance.now() - loadStart;
+      console.log(`⚡ Génération du pdf, temps: ${loadTime.toFixed(2)}ms`);
     });
   }
 }
@@ -208,8 +260,10 @@ async function mainProcess() {
     );
 
     // Sauvegarder ou retourner le buffer
-    fs.writeFileSync("output/generated.pdf", pdfBuffer);
-    console.log("✅ PDF généré avec succès!");
+    const outputPath = "output/generated.pdf";
+    ensureDirectoryExists(outputPath); // Créer tous les dossiers nécessaires
+    fs.writeFileSync(outputPath, pdfBuffer);
+    console.log(`✅ PDF généré avec succès: ${outputPath}`);
 
     return pdfBuffer; // Pour Express: res.send(pdfBuffer)
   } catch (error) {

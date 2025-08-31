@@ -1,0 +1,255 @@
+{
+    "pdf_template": {
+        "page": {
+            "format": "A4",
+            "orientation": "portrait",
+            "margins": [
+                20,
+                15,
+                20,
+                25
+            ]
+        },
+        "fonts": {
+            "default": "Helvetica",
+            "paths": {
+                "CustomFont": "./fonts/CustomFont.ttf"
+            },
+            "base64Data": {
+                "Example": "data:font/truetype;base64,AAEAAAA..."
+            },
+            "embedded": {
+                "MyCustomFont": {
+                    "regular": "base64_encoded_regular_font_data_here",
+                    "bold": "base64_encoded_bold_font_data_here",
+                    "italic": "base64_encoded_italic_font_data_here",
+                    "boldItalic": "base64_encoded_bold_italic_font_data_here"
+                }
+            }
+        },
+        "elements": [
+            {
+                "type": "text",
+                "content": "GUIDE D'UTILISATION DES POLICES",
+                "style": {
+                    "size": 18,
+                    "bold": true,
+                    "color": "#2563EB",
+                    "align": "center",
+                    "margin": [
+                        0,
+                        0,
+                        20,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "1. Polices système standard (Recommandé pour WASM)",
+                "style": {
+                    "size": 14,
+                    "bold": true,
+                    "margin": [
+                        10,
+                        0,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "• Helvetica (police actuelle)\n• Arial\n• Times\n• Courier\n\nCes polices sont toujours disponibles et supportent l'UTF-8.",
+                "style": {
+                    "size": 11,
+                    "margin": [
+                        0,
+                        0,
+                        15,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "2. Polices personnalisées par fichier (Non-WASM uniquement)",
+                "style": {
+                    "size": 14,
+                    "bold": true,
+                    "margin": [
+                        10,
+                        0,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Utilisez 'paths' dans la configuration des polices.\nAttention: ne fonctionne pas en mode WASM à cause des restrictions d'accès aux fichiers.",
+                "style": {
+                    "size": 11,
+                    "color": "#D97706",
+                    "margin": [
+                        0,
+                        0,
+                        15,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "3. Polices base64 (Compatible WASM)",
+                "style": {
+                    "size": 14,
+                    "bold": true,
+                    "margin": [
+                        10,
+                        0,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Encodez votre police TTF en base64 et incluez-la dans 'base64Data'.\nIdéal pour une police simple sans variants.",
+                "style": {
+                    "size": 11,
+                    "color": "#059669",
+                    "margin": [
+                        0,
+                        0,
+                        15,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "4. Polices embarquées complètes (Compatible WASM)",
+                "style": {
+                    "size": 14,
+                    "bold": true,
+                    "margin": [
+                        10,
+                        0,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Utilisez 'embedded' pour inclure tous les variants (regular, bold, italic, boldItalic) d'une police.\nOffre le meilleur support typographique.",
+                "style": {
+                    "size": 11,
+                    "color": "#059669",
+                    "margin": [
+                        0,
+                        0,
+                        20,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "Test UTF-8 avec Helvetica :",
+                "style": {
+                    "size": 14,
+                    "bold": true,
+                    "margin": [
+                        10,
+                        0,
+                        10,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ",
+                "style": {
+                    "size": 12,
+                    "margin": [
+                        0,
+                        0,
+                        5,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "text",
+                "content": "€ £ $ ¥ © ® ™ « » \" \" ' ' … – —",
+                "style": {
+                    "size": 12,
+                    "margin": [
+                        0,
+                        0,
+                        15,
+                        0
+                    ]
+                }
+            },
+            {
+                "type": "table",
+                "columns": [
+                    {
+                        "header": "Mode",
+                        "width": 40,
+                        "align": "left"
+                    },
+                    {
+                        "header": "Compatible WASM",
+                        "width": 30,
+                        "align": "center"
+                    },
+                    {
+                        "header": "Configuration",
+                        "width": 100,
+                        "align": "left"
+                    }
+                ],
+                "rows": [
+                    {
+                        "cells": [
+                            "Polices système",
+                            "✅",
+                            "\"default\": \"Helvetica\""
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Fichiers locaux",
+                            "❌",
+                            "\"paths\": {\"MyFont\": \"./font.ttf\"}"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Base64 simple",
+                            "✅",
+                            "\"base64Data\": {\"MyFont\": \"data...\"}"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Embarquées complètes",
+                            "✅",
+                            "\"embedded\": {\"MyFont\": {...}}"
+                        ]
+                    }
+                ],
+                "style": {
+                    "size": 10,
+                    "border": "1"
+                }
+            }
+        ]
+    },
+    "pdfVars": {}
+}

@@ -2,7 +2,6 @@ package template
 
 import (
 	"bytes"
-	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -14,20 +13,6 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// Embarquer les polices dans le binaire
-//
-//go:embed fonts/DejaVuSans.ttf
-var dejaVuSansFont []byte
-
-//go:embed fonts/DejaVuSans-Bold.ttf
-var dejaVuSansBoldFont []byte
-
-//go:embed fonts/DejaVuSans-Oblique.ttf
-var dejaVuSansObliqueFont []byte
-
-//go:embed fonts/DejaVuSans-BoldOblique.ttf
-var dejaVuSansBoldObliqueFont []byte
-
 // --- Structures du template JSON ---
 
 type PageConfig struct {
@@ -37,8 +22,17 @@ type PageConfig struct {
 }
 
 type FontConfig struct {
-	Default string            `json:"default"`
-	Paths   map[string]string `json:"paths"`
+	Default    string                      `json:"default"`
+	Paths      map[string]string           `json:"paths"`      // Chemins vers fichiers de polices (non-WASM)
+	Base64Data map[string]string           `json:"base64Data"` // Polices en base64 (pour WASM)
+	Embedded   map[string]EmbeddedFontData `json:"embedded"`   // Polices embarquées personnalisées
+}
+
+type EmbeddedFontData struct {
+	Regular    string `json:"regular"`    // Base64 du fichier TTF regular
+	Bold       string `json:"bold"`       // Base64 du fichier TTF bold
+	Italic     string `json:"italic"`     // Base64 du fichier TTF italic
+	BoldItalic string `json:"boldItalic"` // Base64 du fichier TTF bold+italic
 }
 
 type Style struct {
@@ -99,6 +93,7 @@ type PDFBuilder struct {
 	pdf     *gofpdf.Fpdf
 	config  Template
 	margins struct{ left, top, right, bottom float64 }
+	tr      func(string) string // Unicode translator
 }
 
 func NewPDFBuilder(template Template) *PDFBuilder {
@@ -138,37 +133,71 @@ func NewPDFBuilder(template Template) *PDFBuilder {
 	pdf.SetMargins(builder.margins.left, builder.margins.top, builder.margins.right)
 	pdf.SetAutoPageBreak(true, builder.margins.bottom)
 
+	// Initialiser le traducteur Unicode pour supporter l'UTF-8 avec les polices standard
+	builder.tr = pdf.UnicodeTranslatorFromDescriptor("")
+
 	return builder
 }
 
 func (b *PDFBuilder) setupFonts() {
-	// Utiliser les polices embarquées
-	embeddedFonts := map[string]struct {
-		data  []byte
-		style string
-	}{
-		"DejaVu":    {dejaVuSansFont, ""},
-		"DejaVu-B":  {dejaVuSansBoldFont, "B"},
-		"DejaVu-I":  {dejaVuSansObliqueFont, "I"},
-		"DejaVu-BI": {dejaVuSansBoldObliqueFont, "BI"},
+	// Vérifier si on utilise des polices système standard
+	isStandardFont := func(fontName string) bool {
+		standardFonts := []string{"Arial", "Helvetica", "Times", "Courier"}
+		for _, std := range standardFonts {
+			if strings.EqualFold(fontName, std) {
+				return true
+			}
+		}
+		return false
 	}
 
-	// Ajouter les polices embarquées
-	for name, fontInfo := range embeddedFonts {
-		fontName := strings.Split(name, "-")[0]
-
-		// Utiliser AddUTF8FontFromBytes pour les polices embarquées
-		b.pdf.AddUTF8FontFromBytes(fontName, fontInfo.style, fontInfo.data)
+	// Si on utilise une police système standard, pas besoin de setup spécial
+	if isStandardFont(b.config.Fonts.Default) {
+		// Les polices standard sont déjà disponibles dans gofpdf
+		return
 	}
 
-	// Ajouter les polices personnalisées (si définies)
-	for name, path := range b.config.Fonts.Paths {
+	// 1. Ajouter les polices embarquées (structure complète avec variants)
+	for fontName, fontData := range b.config.Fonts.Embedded {
+		if fontData.Regular != "" {
+			if data, err := base64.StdEncoding.DecodeString(fontData.Regular); err == nil {
+				b.pdf.AddUTF8FontFromBytes(fontName, "", data)
+			}
+		}
+		if fontData.Bold != "" {
+			if data, err := base64.StdEncoding.DecodeString(fontData.Bold); err == nil {
+				b.pdf.AddUTF8FontFromBytes(fontName, "B", data)
+			}
+		}
+		if fontData.Italic != "" {
+			if data, err := base64.StdEncoding.DecodeString(fontData.Italic); err == nil {
+				b.pdf.AddUTF8FontFromBytes(fontName, "I", data)
+			}
+		}
+		if fontData.BoldItalic != "" {
+			if data, err := base64.StdEncoding.DecodeString(fontData.BoldItalic); err == nil {
+				b.pdf.AddUTF8FontFromBytes(fontName, "BI", data)
+			}
+		}
+	}
+
+	// 2. Ajouter les polices base64 simples (pour compatibilité)
+	for fontName, base64Data := range b.config.Fonts.Base64Data {
+		if data, err := base64.StdEncoding.DecodeString(base64Data); err == nil {
+			b.pdf.AddUTF8FontFromBytes(fontName, "", data)
+		}
+		// Debug seulement en développement
+		// else { fmt.Printf("Warning: Failed to decode base64 font %s: %v\n", fontName, err) }
+	}
+
+	// 3. Ajouter les polices depuis fichiers (non-WASM uniquement)
+	for fontName, path := range b.config.Fonts.Paths {
 		// Essayer de charger depuis le fichier pour les polices personnalisées
 		if _, err := os.Stat(path); err == nil {
-			b.pdf.AddUTF8Font(name, "", path)
-		} else {
-			fmt.Printf("Warning: Custom font %s not found at %s\n", name, path)
+			b.pdf.AddUTF8Font(fontName, "", path)
 		}
+		// Debug seulement en développement
+		// else { fmt.Printf("Warning: Custom font %s not found at %s (normal en mode WASM)\n", fontName, path) }
 	}
 }
 
@@ -288,9 +317,9 @@ func (b *PDFBuilder) renderText(element Element) {
 		if element.Style != nil && element.Style.Border != "" {
 			border = element.Style.Border
 		}
-		b.pdf.MultiCell(contentWidth, height, content, border, align, fill)
+		b.pdf.MultiCell(contentWidth, height, b.tr(content), border, align, fill)
 	} else {
-		b.pdf.CellFormat(contentWidth, height, content, "", 1, align, fill, 0, "")
+		b.pdf.CellFormat(contentWidth, height, b.tr(content), "", 1, align, fill, 0, "")
 	}
 }
 
@@ -417,7 +446,7 @@ func (b *PDFBuilder) renderTable(element Element) {
 			border = element.Style.Border
 		}
 
-		b.pdf.CellFormat(col.Width, 8, col.Header, border, 0, align, fill, 0, "")
+		b.pdf.CellFormat(col.Width, 8, b.tr(col.Header), border, 0, align, fill, 0, "")
 	}
 
 	// Nouvelle ligne en gardant la position X
@@ -444,7 +473,7 @@ func (b *PDFBuilder) renderTable(element Element) {
 				align = "R"
 			}
 
-			b.pdf.CellFormat(col.Width, 8, cell, "1", 0, align, false, 0, "")
+			b.pdf.CellFormat(col.Width, 8, b.tr(cell), "1", 0, align, false, 0, "")
 		}
 
 		// Nouvelle ligne en gardant la position X
@@ -551,9 +580,9 @@ func (b *PDFBuilder) renderTextInWidth(element Element, maxWidth float64) {
 
 	// Si le contenu contient des retours à la ligne, utiliser MultiCell
 	if strings.Contains(content, "\n") {
-		b.pdf.MultiCell(maxWidth, height, content, border, align, fill)
+		b.pdf.MultiCell(maxWidth, height, b.tr(content), border, align, fill)
 	} else {
-		b.pdf.CellFormat(maxWidth, height*1.5, content, border, 1, align, fill, 0, "")
+		b.pdf.CellFormat(maxWidth, height*1.5, b.tr(content), border, 1, align, fill, 0, "")
 	}
 }
 

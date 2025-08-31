@@ -3,6 +3,7 @@
 # Variables
 BINARY_NAME=pdf-template
 WASM_NAME=pdf-template.wasm
+TINY_WASM_NAME=pdf-template-tiny.wasm
 GO_FILES=$(shell find . -name "*.go" -not -path "./vendor/*")
 
 # Default target
@@ -10,12 +11,9 @@ GO_FILES=$(shell find . -name "*.go" -not -path "./vendor/*")
 all: build test
 
 # Build targets
-.PHONY: build
-build: clean $(BINARY_NAME)
-	@echo "✅ Build complete!"
 
-.PHONY: build-wasm
-build-wasm: clean-wasm $(WASM_NAME)
+.PHONY: build
+build: clean $(BINARY_NAME) $(WASM_NAME)  $(TINY_WASM_NAME)
 	@echo "✅ WASM build complete!"
 
 # Individual builds
@@ -25,7 +23,16 @@ $(BINARY_NAME): $(GO_FILES)
 
 $(WASM_NAME): $(GO_FILES)
 	@echo "📦 Building WASM module..."
-	GOOS=wasip1 GOARCH=wasm go build -o $(WASM_NAME) main.go
+	CGO_ENABLED=0 GOOS=wasip1 GOARCH=wasm go build -ldflags="-s -w -X main.buildmode=production" -trimpath -tags=production -gcflags="-l=4" -o $(WASM_NAME) main.go
+	@echo "� Optimizing WASM..."
+	@wasm-opt $(WASM_NAME) -o $(WASM_NAME).opt --enable-bulk-memory -Oz 2>/dev/null && mv $(WASM_NAME).opt $(WASM_NAME) || echo "   ⚠️  wasm-opt not available, skipping optimization"
+	@echo "📦 Compressing optimized WASM..."
+	@gzip -k $(WASM_NAME) || echo "   ⚠️  gzip not available, skipping compression"
+	@ls -lh $(WASM_NAME)*
+
+$(TINY_WASM_NAME): $(GO_FILES)
+	@echo "📦 Building WASM module with TinyGo..."
+	tinygo build -target=wasip1 -opt=z -gc=leaking -scheduler=none -o $(TINY_WASM_NAME) main.go
 
 # Test targets
 .PHONY: test
@@ -80,54 +87,7 @@ validate:
 .PHONY: clean
 clean:
 	@rm -f $(BINARY_NAME)
-
-.PHONY: clean-wasm
-clean-wasm:
 	@rm -f $(WASM_NAME)
-
-.PHONY: clean-all
-clean-all: clean clean-wasm
+	@rm -f $(WASM_NAME).gz
+	@rm -f $(TINY_WASM_NAME)
 	@rm -rf output/ *.pdf debug_*.json
-
-# Documentation
-.PHONY: docs
-docs:
-	@echo "📖 Documentation disponible:"
-	@echo ""
-	@echo "📋 README.md                - Guide principal avec boucles dynamiques"
-	@echo "🎯 README_TEMPLATING.md     - Guide complet du système de templating"
-	@echo ""
-	@echo "🚀 Quick Start:"
-	@echo "  make test-dynamic         - Tester les boucles dynamiques"
-	@echo "  make examples             - Générer les exemples"
-	@echo ""
-
-# Help
-.PHONY: help
-help:
-	@echo "🔧 PDF Template System - Available Commands:"
-	@echo ""
-	@echo "Build Commands:"
-	@echo "   make build              - Build local binary"
-	@echo "   make build-wasm         - Build WASM module for Node.js"
-	@echo "   make all                - Build + test (default)"
-	@echo ""
-	@echo "Test Commands:"
-	@echo "   make test               - Run all tests"
-	@echo "   make test-basic         - Test basic templates"
-	@echo "   make test-dynamic       - Test dynamic loops with {{#array}}"
-	@echo "   make examples           - Generate examples"
-	@echo ""
-	@echo "Performance Commands:"
-	@echo "   make bench-report       - Generate PDF benchmark report (1000+500 PDFs)"
-	@echo ""
-	@echo "Development:"
-	@echo "   make validate           - Validate JSON templates"
-	@echo "   make fmt                - Format Go code"
-	@echo ""
-	@echo "Documentation:"
-	@echo "   make docs               - Show available documentation"
-	@echo ""
-	@echo "Maintenance:"
-	@echo "   make clean-all          - Clean everything"
-	@echo "   make help               - Show this help"
