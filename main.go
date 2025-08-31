@@ -5,8 +5,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
-
 	"pdf_wasm/internal/template"
 )
 
@@ -20,7 +20,7 @@ type InputData struct {
 
 func main() {
 	// Lire JSON depuis stdin
-	in, err := os.ReadFile("/dev/stdin")
+	in, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "read stdin:", err)
 		os.Exit(1)
@@ -59,5 +59,9 @@ func main() {
 	}
 
 	// Écrire le PDF binaire sur stdout
-	os.Stdout.Write(pdfBytes)
+
+	if _, err := os.Stdout.Write(pdfBytes); err != nil {
+		fmt.Fprintf(os.Stderr, "write stdout: %v\n", err)
+		os.Exit(1)
+	}
 }

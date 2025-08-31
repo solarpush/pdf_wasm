@@ -25,7 +25,7 @@ $(BINARY_NAME): $(GO_FILES)
 
 $(WASM_NAME): $(GO_FILES)
 	@echo "📦 Building WASM module..."
-	GOOS=js GOARCH=wasm go build -o $(WASM_NAME) main.go
+	GOOS=wasip1 GOARCH=wasm go build -o $(WASM_NAME) main.go
 
 # Test targets
 .PHONY: test

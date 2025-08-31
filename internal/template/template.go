@@ -2,6 +2,7 @@ package template
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,20 @@ import (
 
 	"github.com/jung-kurt/gofpdf"
 )
+
+// Embarquer les polices dans le binaire
+//
+//go:embed fonts/DejaVuSans.ttf
+var dejaVuSansFont []byte
+
+//go:embed fonts/DejaVuSans-Bold.ttf
+var dejaVuSansBoldFont []byte
+
+//go:embed fonts/DejaVuSans-Oblique.ttf
+var dejaVuSansObliqueFont []byte
+
+//go:embed fonts/DejaVuSans-BoldOblique.ttf
+var dejaVuSansBoldObliqueFont []byte
 
 // --- Structures du template JSON ---
 
@@ -127,56 +142,33 @@ func NewPDFBuilder(template Template) *PDFBuilder {
 }
 
 func (b *PDFBuilder) setupFonts() {
-	// Configurer les polices UTF-8 par défaut
-	defaultFonts := map[string]string{
-		"DejaVu":    "DejaVuSans.ttf",
-		"DejaVu-B":  "DejaVuSans-Bold.ttf",
-		"DejaVu-I":  "DejaVuSans-Oblique.ttf",
-		"DejaVu-BI": "DejaVuSans-BoldOblique.ttf",
+	// Utiliser les polices embarquées
+	embeddedFonts := map[string]struct {
+		data  []byte
+		style string
+	}{
+		"DejaVu":    {dejaVuSansFont, ""},
+		"DejaVu-B":  {dejaVuSansBoldFont, "B"},
+		"DejaVu-I":  {dejaVuSansObliqueFont, "I"},
+		"DejaVu-BI": {dejaVuSansBoldObliqueFont, "BI"},
 	}
 
-	// Ajouter les polices par défaut
-	for name, path := range defaultFonts {
-		style := ""
-		if strings.Contains(name, "-B") {
-			style = "B"
-		}
-		if strings.Contains(name, "-I") {
-			if style == "B" {
-				style = "BI"
-			} else {
-				style = "I"
-			}
-		}
-
+	// Ajouter les polices embarquées
+	for name, fontInfo := range embeddedFonts {
 		fontName := strings.Split(name, "-")[0]
 
-		// Essayer plusieurs chemins pour les polices
-		paths := []string{
-			path,            // chemin relatif depuis le répertoire courant
-			"./" + path,     // explicitement relatif
-			"../../" + path, // depuis cmd/test_*/
-		}
-
-		var foundPath string
-		for _, p := range paths {
-			if _, err := os.Stat(p); err == nil {
-				foundPath = p
-				break
-			}
-		}
-
-		if foundPath != "" {
-			b.pdf.AddUTF8Font(fontName, style, foundPath)
-		} else {
-			// Fallback vers police système si disponible
-			fmt.Printf("Warning: Font %s not found, using fallback\n", path)
-		}
+		// Utiliser AddUTF8FontFromBytes pour les polices embarquées
+		b.pdf.AddUTF8FontFromBytes(fontName, fontInfo.style, fontInfo.data)
 	}
 
-	// Ajouter les polices personnalisées
+	// Ajouter les polices personnalisées (si définies)
 	for name, path := range b.config.Fonts.Paths {
-		b.pdf.AddUTF8Font(name, "", path)
+		// Essayer de charger depuis le fichier pour les polices personnalisées
+		if _, err := os.Stat(path); err == nil {
+			b.pdf.AddUTF8Font(name, "", path)
+		} else {
+			fmt.Printf("Warning: Custom font %s not found at %s\n", name, path)
+		}
 	}
 }
 
