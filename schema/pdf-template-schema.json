@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PDF Template Schema",
+  "description": "Schéma pour les templates PDF avec variables et boucles dynamiques",
+  "type": "object",
+  "properties": {
+    "page": {
+      "type": "object",
+      "description": "Configuration de la page",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["A4", "A3", "A5", "Letter", "Legal"],
+          "default": "A4",
+          "description": "Format de la page"
+        },
+        "orientation": {
+          "type": "string",
+          "enum": ["portrait", "landscape"],
+          "default": "portrait",
+          "description": "Orientation de la page"
+        },
+        "margins": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[top, right, bottom, left] en mm"
+        }
+      },
+      "required": ["format"],
+      "additionalProperties": false
+    },
+    "fonts": {
+      "type": "object",
+      "description": "Configuration des polices",
+      "properties": {
+        "default": {
+          "type": "string",
+          "enum": ["DejaVu", "Arial", "Helvetica"],
+          "default": "DejaVu",
+          "description": "Police par défaut"
+        }
+      },
+      "additionalProperties": false
+    },
+    "elements": {
+      "type": "array",
+      "description": "Liste des éléments du document",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "Élément texte",
+            "properties": {
+              "type": { "const": "text" },
+              "content": {
+                "type": "string",
+                "description": "Contenu texte avec support des variables {{variable}}"
+              },
+              "style": { "$ref": "#/definitions/textStyle" }
+            },
+            "required": ["type", "content"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Élément tableau",
+            "properties": {
+              "type": { "const": "table" },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "header": { "type": "string" },
+                    "width": { "type": "number" },
+                    "align": { "enum": ["left", "center", "right"] }
+                  },
+                  "required": ["header", "width"]
+                }
+              },
+              "rows": {
+                "type": "array",
+                "description": "Lignes du tableau avec support des boucles {{#array}}...{{/array}}",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "cells": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              },
+              "style": { "$ref": "#/definitions/tableStyle" }
+            },
+            "required": ["type", "columns", "rows"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Grille de mise en page",
+            "properties": {
+              "type": { "const": "grid" },
+              "gridColumns": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Nombre de colonnes"
+              },
+              "children": {
+                "type": "array",
+                "items": { "$ref": "#/definitions/element" }
+              }
+            },
+            "required": ["type", "gridColumns", "children"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "description": "Espace vertical",
+            "properties": {
+              "type": { "const": "space" },
+              "style": {
+                "type": "object",
+                "properties": {
+                  "height": { "type": "number" }
+                }
+              }
+            },
+            "required": ["type"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": ["page", "elements"],
+  "additionalProperties": false,
+  "definitions": {
+    "element": {
+      "oneOf": [
+        { "$ref": "#/properties/elements/items/oneOf/0" },
+        { "$ref": "#/properties/elements/items/oneOf/1" },
+        { "$ref": "#/properties/elements/items/oneOf/2" },
+        { "$ref": "#/properties/elements/items/oneOf/3" }
+      ]
+    },
+    "textStyle": {
+      "type": "object",
+      "description": "Style pour le texte",
+      "properties": {
+        "size": { "type": "number", "minimum": 6, "maximum": 72 },
+        "bold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$|^{{.*}}$" },
+        "bgColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$|^{{.*}}$" },
+        "align": { "enum": ["left", "center", "right"] },
+        "margin": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 1,
+          "maxItems": 4
+        },
+        "padding": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 1,
+          "maxItems": 4
+        },
+        "border": { "type": "string" },
+        "fill": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "tableStyle": {
+      "type": "object",
+      "description": "Style pour les tableaux",
+      "properties": {
+        "size": { "type": "number", "minimum": 6, "maximum": 72 },
+        "bold": { "type": "boolean" },
+        "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$|^{{.*}}$" },
+        "bgColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$|^{{.*}}$" },
+        "border": { "type": "string" },
+        "fill": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

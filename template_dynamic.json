@@ -1,0 +1,190 @@
+{
+    "page": {
+        "format": "A4",
+        "orientation": "portrait",
+        "margins": [
+            20,
+            15,
+            20,
+            25
+        ]
+    },
+    "fonts": {
+        "default": "DejaVu"
+    },
+    "elements": [
+        {
+            "type": "text",
+            "content": "FACTURE N° {{invoice.number}}",
+            "style": {
+                "size": 20,
+                "bold": true,
+                "color": "{{theme.primary}}",
+                "align": "center",
+                "margin": [
+                    0,
+                    0,
+                    10,
+                    0
+                ]
+            }
+        },
+        {
+            "type": "text",
+            "content": "Date: {{invoice.date}}    Échéance: {{invoice.dueDate}}",
+            "style": {
+                "size": 11,
+                "margin": [
+                    0,
+                    0,
+                    15,
+                    0
+                ]
+            }
+        },
+        {
+            "type": "grid",
+            "gridColumns": 2,
+            "children": [
+                {
+                    "type": "text",
+                    "content": "ÉMETTEUR\n{{seller.name}}\n{{seller.address}}\nTVA: {{seller.vat}}\n{{seller.email}}",
+                    "style": {
+                        "size": 10,
+                        "bgColor": "#F8F9FA",
+                        "fill": true,
+                        "border": "1",
+                        "padding": [
+                            8,
+                            10
+                        ]
+                    }
+                },
+                {
+                    "type": "text",
+                    "content": "DESTINATAIRE\n{{buyer.name}}\n{{buyer.address}}\nTVA: {{buyer.vat}}\n{{buyer.email}}",
+                    "style": {
+                        "size": 10,
+                        "bgColor": "#F8F9FA",
+                        "fill": true,
+                        "border": "1",
+                        "padding": [
+                            8,
+                            10
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": "space",
+            "style": {
+                "height": 20
+            }
+        },
+        {
+            "type": "table",
+            "columns": [
+                {
+                    "header": "Description",
+                    "width": 80,
+                    "align": "left"
+                },
+                {
+                    "header": "Qté",
+                    "width": 20,
+                    "align": "center"
+                },
+                {
+                    "header": "PU HT",
+                    "width": 30,
+                    "align": "right"
+                },
+                {
+                    "header": "Total HT",
+                    "width": 30,
+                    "align": "right"
+                }
+            ],
+            "rows": [
+                {
+                    {#items
+                    }
+                }
+                {
+                    "cells": [
+                        "{{description}}",
+                        "{{quantity}}",
+                        "{{unitPrice}} {{currency}}",
+                        "{{total}} {{currency}}"
+                    ]
+                }
+                {
+                    {/items
+                    }
+                }
+            ],
+            "style": {
+                "size": 10,
+                "color": "#FFFFFF",
+                "bgColor": "{{theme.primary}}",
+                "bold": true,
+                "fill": true,
+                "border": "1"
+            }
+        },
+        {
+            "type": "space",
+            "style": {
+                "height": 15
+            }
+        },
+        {
+            "type": "grid",
+            "gridColumns": 2,
+            "children": [
+                {
+                    "type": "text",
+                    "content": "{{notes}}",
+                    "style": {
+                        "size": 9,
+                        "italic": true
+                    }
+                },
+                {
+                    "type": "text",
+                    "content": "Total HT: {{totals.ht}} {{currency}}\nTVA: {{totals.vat}} {{currency}}\nTotal TTC: {{totals.ttc}} {{currency}}",
+                    "style": {
+                        "size": 11,
+                        "bold": true,
+                        "align": "right",
+                        "color": "{{theme.accent}}",
+                        "bgColor": "#F8F9FA",
+                        "fill": true,
+                        "padding": [
+                            8,
+                            10
+                        ],
+                        "border": "1"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "space",
+            "style": {
+                "height": 20
+            }
+        },
+        {
+            "type": "text",
+            "content": "Facture générée pour {{buyer.name}} le {{invoice.date}}",
+            "style": {
+                "size": 9,
+                "color": "#6B7280",
+                "align": "center",
+                "italic": true
+            }
+        }
+    ]
+}

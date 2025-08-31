@@ -1,0 +1,20 @@
+{
+  "yaml.schemas": {
+    "./schema/pdf-template-schema.json": ["*.pdftpl", "**/templates/*.yaml", "**/templates/*.yml"]
+  },
+  "files.associations": {
+    "*.pdftpl": "yaml"
+  },
+  "yaml.format.enable": true,
+  "yaml.validate": true,
+  "yaml.completion": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "[yaml]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "full",
+    "editor.formatOnSave": true
+  }
+}
