@@ -16,18 +16,89 @@
         "elements": [
             {
                 "type": "text",
-                "content": "FACTURE N° {{invoice.number}}",
+                "content": "FACTURE",
                 "style": {
-                    "size": 20,
+                    "size": 24,
                     "bold": true,
                     "color": "{{theme.primary}}",
                     "align": "center",
                     "margin": [
                         0,
                         0,
-                        10,
+                        20,
                         0
                     ]
+                }
+            },
+            {
+                "type": "grid",
+                "gridColumns": 2,
+                "children": [
+                    {
+                        "type": "text",
+                        "content": "{{company.name}}\n{{company.address}}\n{{company.city}}\nTél: {{company.phone}}\nEmail: {{company.email}}\nSIRET: {{company.siret}}\nTVA: {{company.vat}}",
+                        "style": {
+                            "size": 10,
+                            "color": "#333333"
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "content": "Facture N°: {{invoice.number}}\nDate: {{invoice.date}}\nÉchéance: {{invoice.dueDate}}\n\nPage 1/1",
+                        "style": {
+                            "size": 10,
+                            "align": "right",
+                            "color": "#666666"
+                        }
+                    }
+                ]
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 25
+                }
+            },
+            {
+                "type": "grid",
+                "gridColumns": 2,
+                "children": [
+                    {
+                        "type": "text",
+                        "content": "FACTURER À:\n{{client.name}}\n{{client.address}}\n{{client.city}}\n{{client.country}}",
+                        "style": {
+                            "size": 11,
+                            "bold": true,
+                            "bgColor": "#F8F9FA",
+                            "fill": true,
+                            "border": "1",
+                            "padding": [
+                                10,
+                                10
+                            ]
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "content": "LIVRER À:\n{{delivery.name}}\n{{delivery.address}}\n{{delivery.city}}\n{{delivery.country}}",
+                        "style": {
+                            "size": 11,
+                            "bold": true,
+                            "bgColor": "#F8F9FA",
+                            "fill": true,
+                            "border": "1",
+                            "padding": [
+                                10,
+                                10
+                            ]
+                        }
+                    }
+                ]
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 20
                 }
             },
             {
@@ -35,12 +106,27 @@
                 "columns": [
                     {
                         "header": "Description",
-                        "width": 100,
+                        "width": 80,
                         "align": "left"
                     },
                     {
-                        "header": "Prix",
-                        "width": 40,
+                        "header": "Qté",
+                        "width": 20,
+                        "align": "center"
+                    },
+                    {
+                        "header": "P.U. HT",
+                        "width": 25,
+                        "align": "right"
+                    },
+                    {
+                        "header": "TVA",
+                        "width": 20,
+                        "align": "center"
+                    },
+                    {
+                        "header": "Total HT",
+                        "width": 25,
                         "align": "right"
                     }
                 ],
@@ -49,7 +135,10 @@
                     {
                         "cells": [
                             "{{description}}",
-                            "{{price}} {{currency}}"
+                            "{{quantity}}",
+                            "{{unitPrice}} {{currency}}",
+                            "{{vat}}%",
+                            "{{total}} {{currency}}"
                         ]
                     },
                     "{{/items}}"
@@ -64,41 +153,218 @@
                 }
             },
             {
-                "type": "text",
-                "content": "Total: {{total}} {{currency}}",
+                "type": "space",
                 "style": {
-                    "size": 14,
-                    "bold": true,
-                    "align": "right",
-                    "color": "{{theme.accent}}"
+                    "height": 15
+                }
+            },
+            {
+                "type": "table",
+                "columns": [
+                    {
+                        "header": "Sous-total HT:",
+                        "width": 50,
+                        "align": "right"
+                    },
+                    {
+                        "header": "{{totals.subtotal}} {{currency}}",
+                        "width": 40,
+                        "align": "right"
+                    }
+                ],
+                "rows": [
+                    {
+                        "cells": [
+                            "Frais de port:",
+                            "{{totals.shipping}} {{currency}}"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Remise:",
+                            "{{totals.discount}} {{currency}}"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "Total HT:",
+                            "{{totals.ht}} {{currency}}"
+                        ],
+                        "style": {
+                            "bold": true,
+                            "bgColor": "#E5E7EB"
+                        }
+                    },
+                    {
+                        "cells": [
+                            "TVA ({{totals.vatRate}}%):",
+                            "{{totals.vat}} {{currency}}"
+                        ]
+                    },
+                    {
+                        "cells": [
+                            "TOTAL TTC:",
+                            "{{totals.ttc}} {{currency}}"
+                        ],
+                        "style": {
+                            "bold": true,
+                            "size": 12,
+                            "color": "{{theme.secondary}}",
+                            "bgColor": "#F3F4F6"
+                        }
+                    }
+                ],
+                "style": {
+                    "size": 10,
+                    "border": "1",
+                    "align": "right"
+                }
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 10
+                }
+            },
+            {
+                "type": "text",
+                "content": "CONDITIONS DE PAIEMENT:{{payment.terms}}\nMODE DE RÈGLEMENT:\n{{payment.method}}\nCOMPTE BANCAIRE:\n{{payment.iban}}\nBIC: {{payment.bic}}",
+                "style": {
+                    "size": 9,
+                    "color": "#666666",
+                    "italic": true
+                }
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 30
+                }
+            },
+            {
+                "type": "text",
+                "content": "{{notes}}",
+                "style": {
+                    "size": 9,
+                    "color": "#666666",
+                    "italic": true,
+                    "align": "center"
+                }
+            },
+            {
+                "type": "space",
+                "style": {
+                    "height": 20
+                }
+            },
+            {
+                "type": "line",
+                "style": {
+                    "color": "{{theme.primary}}",
+                    "height": 0.5
+                }
+            },
+            {
+                "type": "text",
+                "content": "{{company.name}} - {{company.address}} - {{company.city}} | Tél: {{company.phone}} | {{company.email}}",
+                "style": {
+                    "size": 8,
+                    "color": "#999999",
+                    "align": "center",
+                    "margin": [
+                        5,
+                        0,
+                        0,
+                        0
+                    ]
                 }
             }
         ]
     },
     "pdfVars": {
+        "company": {
+            "name": "DIGITAL SOLUTIONS SARL",
+            "address": "123 Avenue des Champs-Élysées",
+            "city": "75008 Paris, France",
+            "phone": "+33 1 42 56 78 90",
+            "email": "contact@digitalsolutions.fr",
+            "siret": "123 456 789 00012",
+            "vat": "FR12345678901"
+        },
         "invoice": {
-            "number": "FAC-2025-LOOP",
-            "date": "31/08/2025"
+            "number": "FAC-2025-0156",
+            "date": "31 août 2025",
+            "dueDate": "30 septembre 2025"
+        },
+        "client": {
+            "name": "TECH CORP SAS",
+            "address": "456 Rue de la Innovation",
+            "city": "69000 Lyon, France",
+            "country": "France"
+        },
+        "delivery": {
+            "name": "TECH CORP SAS - Siège",
+            "address": "456 Rue de la Innovation",
+            "city": "69000 Lyon, France",
+            "country": "France"
         },
         "items": [
             {
-                "description": "Service de développement",
-                "price": "1200.00"
+                "description": "Développement application web responsive",
+                "quantity": "1",
+                "unitPrice": "2800.00",
+                "vat": "20",
+                "total": "2800.00"
             },
             {
-                "description": "Formation",
-                "price": "800.00"
+                "description": "Formation équipe (3 jours)",
+                "quantity": "3",
+                "unitPrice": "650.00",
+                "vat": "20",
+                "total": "1950.00"
             },
             {
-                "description": "Support technique",
-                "price": "400.00"
+                "description": "Support technique premium (6 mois)",
+                "quantity": "6",
+                "unitPrice": "180.00",
+                "vat": "20",
+                "total": "1080.00"
+            },
+            {
+                "description": "Hébergement cloud annuel",
+                "quantity": "1",
+                "unitPrice": "720.00",
+                "vat": "20",
+                "total": "720.00"
+            },
+            {
+                "description": "Licence logiciel entreprise",
+                "quantity": "1",
+                "unitPrice": "450.00",
+                "vat": "20",
+                "total": "450.00"
             }
         ],
         "currency": "€",
-        "total": "2400.00",
+        "totals": {
+            "subtotal": "7000.00",
+            "shipping": "50.00",
+            "discount": "-200.00",
+            "ht": "6850.00",
+            "vatRate": "20",
+            "vat": "1370.00",
+            "ttc": "8220.00"
+        },
+        "payment": {
+            "terms": "Paiement à 30 jours fin de mois",
+            "method": "Virement bancaire ou chèque",
+            "iban": "FR14 2004 1010 0505 0001 3M02 606",
+            "bic": "PSSTFRPPPAR"
+        },
         "theme": {
-            "primary": "#2563EB",
-            "accent": "#059669"
-        }
+            "primary": "#1E40AF",
+            "secondary": "#059669"
+        },
+        "notes": "Merci pour votre confiance. En cas de retard de paiement, des pénalités de 3 fois le taux légal seront appliquées.\nTout litige relève de la compétence du Tribunal de Commerce de Paris."
     }
 }

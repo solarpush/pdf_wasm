@@ -226,6 +226,9 @@ func (b *PDFBuilder) applyStyle(style *Style) {
 }
 
 func (b *PDFBuilder) renderElement(element Element) {
+	// Appliquer les marges universelles pour tous les éléments
+	b.applyMargin(element.Style)
+
 	switch element.Type {
 	case "text":
 		b.renderText(element)
@@ -240,12 +243,17 @@ func (b *PDFBuilder) renderElement(element Element) {
 	case "image":
 		b.renderImage(element)
 	}
+
+	// Appliquer la marge du bas pour tous les éléments
+	if element.Style != nil && len(element.Style.Margin) > 0 {
+		margin := parseSpacing(element.Style.Margin)
+		if margin.Bottom > 0 {
+			b.pdf.Ln(margin.Bottom)
+		}
+	}
 }
 
 func (b *PDFBuilder) renderText(element Element) {
-	// Appliquer les marges
-	b.applyMargin(element.Style)
-
 	b.applyStyle(element.Style)
 
 	content := ""
@@ -294,20 +302,47 @@ func (b *PDFBuilder) renderText(element Element) {
 	} else {
 		b.pdf.CellFormat(contentWidth, height, content, "", 1, align, fill, 0, "")
 	}
-
-	// Appliquer la marge du bas
-	if element.Style != nil && len(element.Style.Margin) > 0 {
-		margin := parseSpacing(element.Style.Margin)
-		if margin.Bottom > 0 {
-			b.pdf.Ln(margin.Bottom)
-		}
-	}
 }
 
 func (b *PDFBuilder) renderTable(element Element) {
 	if len(element.Columns) == 0 {
 		return
 	}
+
+	// Calculer l'alignement du tableau
+	tableAlign := "L"
+	if element.Style != nil && element.Style.Align != "" {
+		switch element.Style.Align {
+		case "center":
+			tableAlign = "C"
+		case "right":
+			tableAlign = "R"
+		}
+	}
+
+	// Calculer la largeur totale du tableau
+	totalWidth := 0.0
+	for _, col := range element.Columns {
+		totalWidth += col.Width
+	}
+
+	// Calculer la position X selon l'alignement
+	pageWidth, _ := b.pdf.GetPageSize()
+	availableWidth := pageWidth - b.margins.left - b.margins.right
+
+	var startX float64
+	switch tableAlign {
+	case "C":
+		startX = b.margins.left + (availableWidth-totalWidth)/2
+	case "R":
+		startX = b.margins.left + (availableWidth - totalWidth)
+	default:
+		startX = b.margins.left
+	}
+
+	// Sauvegarder la position actuelle et se placer pour le tableau
+	currentY := b.pdf.GetY()
+	b.pdf.SetXY(startX, currentY)
 
 	// Gérer les différents types de Rows
 	var rows []TableRow
@@ -328,6 +363,37 @@ func (b *PDFBuilder) renderTable(element Element) {
 						}
 					}
 				}
+
+				// Gérer le style de la ligne
+				if styleData, exists := rowMap["style"]; exists {
+					if styleMap, ok := styleData.(map[string]interface{}); ok {
+						style := &Style{}
+
+						if bold, exists := styleMap["bold"]; exists {
+							if b, ok := bold.(bool); ok {
+								style.Bold = b
+							}
+						}
+						if size, exists := styleMap["size"]; exists {
+							if s, ok := size.(float64); ok {
+								style.Size = s
+							}
+						}
+						if color, exists := styleMap["color"]; exists {
+							if c, ok := color.(string); ok {
+								style.Color = c
+							}
+						}
+						if bgColor, exists := styleMap["bgColor"]; exists {
+							if bg, ok := bgColor.(string); ok {
+								style.BgColor = bg
+							}
+						}
+
+						row.Style = style
+					}
+				}
+
 				rows = append(rows, row)
 			}
 		}
@@ -363,9 +429,10 @@ func (b *PDFBuilder) renderTable(element Element) {
 
 		b.pdf.CellFormat(col.Width, 8, col.Header, border, 0, align, fill, 0, "")
 	}
-	b.pdf.Ln(-1)
 
-	// Lignes de données
+	// Nouvelle ligne en gardant la position X
+	currentY = b.pdf.GetY()
+	b.pdf.SetXY(startX, currentY+8) // Lignes de données
 	for _, row := range rows {
 		if row.Style != nil {
 			b.applyStyle(row.Style)
@@ -389,7 +456,10 @@ func (b *PDFBuilder) renderTable(element Element) {
 
 			b.pdf.CellFormat(col.Width, 8, cell, "1", 0, align, false, 0, "")
 		}
-		b.pdf.Ln(-1)
+
+		// Nouvelle ligne en gardant la position X
+		currentY = b.pdf.GetY()
+		b.pdf.SetXY(startX, currentY+8)
 	}
 }
 
@@ -1110,13 +1180,13 @@ func DetectTemplateFormat(filePath string) string {
 		if err != nil {
 			return "unknown"
 		}
-		
+
 		// Test rapide : si ça commence par { c'est probablement JSON
 		trimmed := strings.TrimSpace(string(content))
 		if strings.HasPrefix(trimmed, "{") {
 			return "json"
 		}
-		
+
 		return "yaml"
 	}
 }
